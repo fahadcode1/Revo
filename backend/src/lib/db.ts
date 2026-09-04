@@ -1,4 +1,4 @@
-import config from "../config/config"
+import config from "../config/env"
 import mongoose from "mongoose"
 
 //connect to MongoDb database
