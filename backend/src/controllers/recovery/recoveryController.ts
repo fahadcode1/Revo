@@ -25,8 +25,8 @@ export const GetRecoveryCases = async (req: Request, res: Response) => {
 
 export const GetRecoveryCase = async (req: Request, res: Response) => {
   try {
-    const { recoveryCaseId } = req.params
-    const recoveryCase = await getRecoveryCaseById(recoveryCaseId)
+    const  recoveryCaseId  = req.params.recoveryCaseId as string 
+    const recoveryCase = await getRecoveryCaseById(recoveryCaseId) 
 
     res.status(200).json({
       success: true,
@@ -41,7 +41,7 @@ export const GetRecoveryCase = async (req: Request, res: Response) => {
 
 export const ManuallyTriggerRecovery = async (req: Request, res: Response) => {
   try {
-    const { recoveryCaseId } = req.params
+    const recoveryCaseId = req.params.recoveryCaseId as string
     const { workflowType } = req.body
     const result = await manuallyTriggerRecovery({ recoveryCaseId, workflowType })
 
@@ -58,7 +58,7 @@ export const ManuallyTriggerRecovery = async (req: Request, res: Response) => {
 
 export const StopRecovery = async (req: Request, res: Response) => {
   try {
-    const { recoveryCaseId } = req.params
+    const recoveryCaseId = req.params.recoveryCaseId as string
     const result = await stopRecovery(recoveryCaseId)
 
     res.status(200).json({
@@ -74,7 +74,7 @@ export const StopRecovery = async (req: Request, res: Response) => {
 
 export const ResumeRecovery = async (req: Request, res: Response) => {
   try {
-    const { recoveryCaseId } = req.params
+    const recoveryCaseId = req.params.recoveryCaseId as string
     const result = await resumeRecovery(recoveryCaseId)
 
     res.status(200).json({

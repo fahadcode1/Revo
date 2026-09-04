@@ -4,6 +4,7 @@ import {
   updatePolicy,
   getPolicies,
   setPolicyEnabled,
+  deletePolicy,
 } from "../../services/policy/policyService"
 
 export const CreatePolicy = async (req: Request, res: Response) => {
@@ -30,7 +31,7 @@ export const CreatePolicy = async (req: Request, res: Response) => {
 
 export const UpdatePolicy = async (req: Request, res: Response) => {
   try {
-    const { policyId } = req.params
+    const policyId = req.params.policyId as string
     const updates = req.body
     const policy = await updatePolicy(policyId, updates)
 
@@ -63,7 +64,7 @@ export const GetPolicies = async (req: Request, res: Response) => {
 
 export const SetPolicyEnabled = async (req: Request, res: Response) => {
   try {
-    const { policyId } = req.params
+    const policyId = req.params.policyId  as string
     const { enabled } = req.body
     const policy = await setPolicyEnabled(policyId, enabled)
 
@@ -74,6 +75,21 @@ export const SetPolicyEnabled = async (req: Request, res: Response) => {
     })
   } catch (err) {
     console.error("SetPolicyEnabled error:", err)
+    return res.status(500).json({ success: false, message: "Internal server error" })
+  }
+}
+
+export const DeletePolicy = async (req: Request, res: Response) => {
+  try {
+    const policyId = req.params.policyId as string
+    await deletePolicy(policyId)
+
+    res.status(200).json({
+      success: true,
+      message: "Policy deleted",
+    })
+  } catch (err) {
+    console.error("DeletePolicy error:", err)
     return res.status(500).json({ success: false, message: "Internal server error" })
   }
 }

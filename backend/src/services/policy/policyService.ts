@@ -68,3 +68,12 @@ export const validateRequestedAction = async (problemType: string, action: strin
 
   return true
 }
+
+export const deletePolicy = async (policyId: string) => {
+  const policy = await Policy.findByIdAndDelete(policyId)
+  if (!policy) {
+    throw new Error("Policy not found")
+  }
+
+  return policy
+}

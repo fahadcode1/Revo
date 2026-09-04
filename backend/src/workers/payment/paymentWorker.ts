@@ -1,6 +1,6 @@
 import { IWorkflowStep } from "../../models/WorkflowStep.Model"
 import { getPaymentStatus, retryPaymentThroughProvider } from "../../services/payment/paymentService"
-import { RecoveryCase } from "../../models/RecoveryCase.Model"
+
 
 export const executePaymentRetry = async (step: IWorkflowStep, paymentId: string) => {
   const currentStatus = await getPaymentStatus(paymentId)

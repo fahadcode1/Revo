@@ -5,7 +5,8 @@ import {
   getWorkflowHistory,
   stopWorkflow,
   resumeWorkflow,
-} from "../../services/workflow"
+} from "../../services/workflow/workflowService"
+
 
 export const GetActiveWorkflows = async (req: Request, res: Response) => {
   try {
@@ -25,7 +26,7 @@ export const GetActiveWorkflows = async (req: Request, res: Response) => {
 
 export const GetWorkflowDetails = async (req: Request, res: Response) => {
   try {
-    const { workflowId } = req.params
+    const workflowId = req.params.workflowId as string
     const workflow = await getWorkflowDetails(workflowId)
 
     res.status(200).json({
@@ -41,7 +42,7 @@ export const GetWorkflowDetails = async (req: Request, res: Response) => {
 
 export const GetWorkflowHistory = async (req: Request, res: Response) => {
   try {
-    const { workflowId } = req.params
+    const workflowId = req.params.workflowId as string
     const history = await getWorkflowHistory(workflowId)
 
     res.status(200).json({
@@ -57,7 +58,7 @@ export const GetWorkflowHistory = async (req: Request, res: Response) => {
 
 export const StopWorkflow = async (req: Request, res: Response) => {
   try {
-    const { workflowId } = req.params
+    const workflowId = req.params.workflowId as string
     const result = await stopWorkflow(workflowId)
 
     res.status(200).json({
@@ -73,7 +74,7 @@ export const StopWorkflow = async (req: Request, res: Response) => {
 
 export const ResumeWorkflow = async (req: Request, res: Response) => {
   try {
-    const { workflowId } = req.params
+    const workflowId = req.params.workflowId as string
     const result = await resumeWorkflow(workflowId)
 
     res.status(200).json({
