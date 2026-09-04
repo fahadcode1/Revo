@@ -7,6 +7,13 @@ interface BasePayload {
   email: string;
   phone: string;
 }
+interface WithIssuePayload extends BasePayload {
+  issueType: string;
+  amount: number;
+  currency: string;
+  provider: string;
+  failureReason: string;
+}
 
 interface StandardPayload extends BasePayload {
   status: string;

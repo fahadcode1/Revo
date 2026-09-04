@@ -6,6 +6,7 @@ export const createPayment = async (data: {
   currency: string
   status: string
   provider: string
+  failureReason?: string
 }) => {
   const payment = await Payment.create(data)
   return payment

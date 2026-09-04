@@ -17,3 +17,10 @@ export interface PaymentIssue {
   status?: string;
   createdAt?: string;
 }
+export const FAILURE_REASON_META: Record<string, { label: string; color: string }> = {
+  insufficient_funds: { label: "Insufficient funds", color: "text-yellow-400" },
+  card_expired: { label: "Card expired", color: "text-red-400" },
+  bank_declined: { label: "Bank declined", color: "text-red-400" },
+  network_error: { label: "Network error", color: "text-blue-400" },
+};
+

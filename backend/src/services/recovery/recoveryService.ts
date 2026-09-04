@@ -6,6 +6,7 @@ export const createRecoveryCase = async (data: {
   revenueAtRisk: number
   problemType: string
   aiDiagnosis: string
+  status : string
 }) => {
   const recoveryCase = await RecoveryCase.create({
     ...data,

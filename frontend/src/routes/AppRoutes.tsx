@@ -4,6 +4,7 @@ import AppLayout from "../components/layouts/AppLayout";
 import Dashboard from "../pages/dashboard/Dashbaord";
 import CustomersPage from "../pages/customer/CustomersPage";
 import ManageCustomerPage from "../pages/management/ManageCustomerPage";
+import RecoveryPage from "../pages/recovery/RecoveryPage";
 
 
 export const AppRoutes = () =>  {
@@ -15,6 +16,8 @@ export const AppRoutes = () =>  {
                 <Route path="/dashboard" element={<Dashboard />} />       
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/management" element={<ManageCustomerPage />} />
+                <Route path="/recovery" element={<RecoveryPage />} />
+
              </Route>
         </Routes>
     )

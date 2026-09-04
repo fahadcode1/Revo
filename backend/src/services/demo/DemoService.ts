@@ -24,15 +24,24 @@ export const createCustomerWithIssue = async (data: {
   email: string
   phone: string
   issueType: string
+  amount: number
+  currency: string
+  provider: string
+  failureReason: string
 }) => {
   const customer = await createCustomer({
     fullName: data.fullName,
     email: data.email,
     phone: data.phone,
     status: "issue",
+    issue: {
+      type: data.issueType,
+      amount: data.amount,
+      currency: data.currency,
+      provider: data.provider,
+      failureReason: data.failureReason,
+    },
   })
-
-  // TODO: optionally auto-create a demo payment + recovery case here based on issueType
 
   return customer
 }
@@ -78,13 +87,14 @@ export const simulatePaymentFailure = async (data: {
     failureReason: data.failureReason,
   })
 
-  const recoveryCase = await createRecoveryCase({
-    customer: payment.customer.toString(),
-    payment: payment._id.toString(),
-    revenueAtRisk: payment.amount,
-    problemType: data.failureReason,
-    aiDiagnosis: "Simulated failure for demo purposes",
-  })
+const recoveryCase = await createRecoveryCase({
+  customer: payment.customer.toString(),
+  payment: payment._id.toString(),
+  revenueAtRisk: payment.amount,
+  problemType: data.failureReason,
+  status: "failed",   // ← add this
+  aiDiagnosis: "Simulated failure for demo purposes",
+})
 
   return { payment, recoveryCase }
 }

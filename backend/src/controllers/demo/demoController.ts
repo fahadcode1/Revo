@@ -44,8 +44,17 @@ export const DeleteDemoCustomer = async (req: Request, res: Response) => {
 
 export const CreateCustomerWithIssue = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, phone, issueType } = req.body
-    const customer = await createCustomerWithIssue({ fullName, email, phone, issueType })
+    const { fullName, email, phone, issueType, amount, currency, provider, failureReason } = req.body
+    const customer = await createCustomerWithIssue({
+      fullName,
+      email,
+      phone,
+      issueType,
+      amount,
+      currency,
+      provider,
+      failureReason,
+    })
 
     res.status(200).json({
       success: true,
