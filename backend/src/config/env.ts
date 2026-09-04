@@ -10,6 +10,7 @@ interface Config {
     ownerFullName : string
     ownerEmail : string
     ownerMobileNumber : string
+    allowedOrgins : string
 }
 
 const config: Config = {
@@ -20,6 +21,7 @@ const config: Config = {
     ownerFullName : process.env.OWNER_FULL_NAME || '',
     ownerEmail : process.env.OWNER_EMAIL || '',
     ownerMobileNumber : process.env.OWNER_MOBILE_NUMBER || '',
+    allowedOrgins : process.env.ALLOWED_ORIGINS || '',
 
 }
 

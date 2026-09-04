@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import {
   setRecoveryEngineStatus,
   setAiStatus,
-} from "../../services/SettingsService"
+} from "../../services/settings/SettingsService"
 
 export const SetRecoveryEngineStatus = async (req: Request, res: Response) => {
   try {

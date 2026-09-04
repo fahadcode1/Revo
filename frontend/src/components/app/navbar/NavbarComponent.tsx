@@ -8,6 +8,7 @@ export default function Navbar() {
     { name: "Overview", path: "/dashboard" },
     { name: "Recovery", path: "/recovery" },
     { name: "Customers", path: "/customers" },
+    { name: "Management", path: "/Management" },
     { name: "Activity", path: "/activity" },
   ];
 
