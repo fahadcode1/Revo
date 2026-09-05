@@ -1,6 +1,6 @@
 import { groq } from "../../config/groqClient"
 
-const MODEL = "llama-3.3-70b-versatile" // can change to whichever Groq model we're using
+const MODEL = "openai/gpt-oss-120b" // can change to whichever Groq model we're using
 
 export interface AIRequestOptions {
   systemPrompt: string

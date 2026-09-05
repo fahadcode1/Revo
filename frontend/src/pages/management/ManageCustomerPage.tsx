@@ -4,6 +4,8 @@ import { useCreateCustomer } from "../../hooks/useCreateCustomer";
 
 type CustomerType = "standard" | "with-issue" | "without-issue";
 
+const PROVIDER = "razorpay" as const;
+
 export default function ManageCustomerPage() {
   const navigate = useNavigate();
   const { createStandard, createWithIssue, createWithoutIssue, loading, error } =
@@ -14,7 +16,10 @@ export default function ManageCustomerPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState("active");
-  const [issueType, setIssueType] = useState("payment_failed");
+  const [issueType, setIssueType] = useState("insufficient_funds");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("INR");
+  const [failureReason, setFailureReason] = useState("");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const resetForm = () => {
@@ -22,7 +27,10 @@ export default function ManageCustomerPage() {
     setEmail("");
     setPhone("");
     setStatus("active");
-    setIssueType("payment_failed");
+    setIssueType("insufficient_funds");
+    setAmount("");
+    setCurrency("INR");
+    setFailureReason("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,12 +41,35 @@ export default function ManageCustomerPage() {
     let result = null;
 
     if (type === "standard") {
-      result = await createStandard({ ...base, status });
-    } else if (type === "with-issue") {
-      result = await createWithIssue({ ...base, issueType });
+      result = await createStandard({
+        ...base,
+        status,
+        amount: Number(amount),
+        currency,
+        provider: PROVIDER,
+      });
+        } else if (type === "with-issue") {
+      result = await createWithIssue({
+        ...base,
+        issueType,
+        amount: Number(amount),
+        currency,
+        provider: PROVIDER,
+        failureReason,
+      });
+
+      if (result?.recoveryCase?._id) {
+        navigate(`/recovery/${result.recoveryCase._id}`);;
+        return;
+      }
     } else {
-      result = await createWithoutIssue(base);
-    }
+          result = await createWithoutIssue({
+            ...base,
+            amount: Number(amount),
+            currency,
+            provider: PROVIDER,
+          });
+        }
 
     if (result) {
       setSuccessMsg(`Created ${fullName} successfully.`);
@@ -119,7 +150,45 @@ export default function ManageCustomerPage() {
           />
         </div>
 
-        {/* Conditional field */}
+        {/* Amount + currency — shown for all three types now */}
+        <div className="mb-4">
+          <label className="mb-1 block text-xs text-[#888]">Amount</label>
+          <input
+            required
+            type="number"
+            min="0"
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Subscription amount"
+            className="w-full rounded-lg border border-[#292929] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:outline-none"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="mb-1 block text-xs text-[#888]">Currency</label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="w-full rounded-lg border border-[#292929] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:outline-none"
+          >
+            <option value="INR">INR</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+
+        {/* Provider — fixed, read-only */}
+        <div className="mb-4">
+          <label className="mb-1 block text-xs text-[#888]">Provider</label>
+          <input
+            disabled
+            value="Razorpay"
+            className="w-full cursor-not-allowed rounded-lg border border-[#292929] bg-[#0d0d0d] px-3 py-2 text-sm text-[#666] focus:outline-none"
+          />
+        </div>
+
+        {/* Standard-only field */}
         {type === "standard" && (
           <div className="mb-4">
             <label className="mb-1 block text-xs text-[#888]">Status</label>
@@ -135,20 +204,34 @@ export default function ManageCustomerPage() {
           </div>
         )}
 
+        {/* With-issue-only fields */}
         {type === "with-issue" && (
-          <div className="mb-4">
-            <label className="mb-1 block text-xs text-[#888]">Issue type</label>
-            <select
-              value={issueType}
-              onChange={(e) => setIssueType(e.target.value)}
-              className="w-full rounded-lg border border-[#292929] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:outline-none"
-            >
-              <option value="insufficient_funds">Insufficient funds</option>
-              <option value="card_expired">Card expired</option>
-              <option value="bank_declined">Bank declined</option>
-              <option value="network_error">Network error</option>
-            </select>
-          </div>
+          <>
+            <div className="mb-4">
+              <label className="mb-1 block text-xs text-[#888]">Issue type</label>
+              <select
+                value={issueType}
+                onChange={(e) => setIssueType(e.target.value)}
+                className="w-full rounded-lg border border-[#292929] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:outline-none"
+              >
+                <option value="insufficient_funds">Insufficient funds</option>
+                <option value="card_expired">Card expired</option>
+                <option value="bank_declined">Bank declined</option>
+                <option value="network_error">Network error</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1 block text-xs text-[#888]">Failure reason</label>
+              <input
+                required
+                value={failureReason}
+                onChange={(e) => setFailureReason(e.target.value)}
+                placeholder="e.g. Card declined by issuing bank"
+                className="w-full rounded-lg border border-[#292929] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:outline-none"
+              />
+            </div>
+          </>
         )}
 
         {error && <p className="mb-4 text-xs text-red-400">{error}</p>}

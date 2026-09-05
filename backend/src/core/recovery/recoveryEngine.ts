@@ -7,19 +7,30 @@ import { Settings } from "../../models/Settings.Model"
 import { createWorkflowForCase, scheduleNextStep } from "../workflow/workflowEngine"
 import { evaluatePolicy } from "../policy/policyEngine"
 import { ActionType } from "../action/actionEngine"
+import { generateRecoveryMessage } from "../../ai/messageGenerator/messageGenerator"
+import { recordAIMessage } from "../../services/conversation/conversationService"
+import { Customer } from "../../models/Customer.Model"
 
 const isEngineEnabled = async () => {
   const settings = await Settings.findOne()
   return settings ? settings.recoveryEngineEnabled : true
 }
 
-// TODO: replace with real AI diagnosis call (LLM/classifier)
-const runAIDiagnosis = async (event: IEvent) => {
+import { analyzePaymentFailure } from "../../ai/diagnosis/diagnosisService"
+
+const runAIDiagnosis = async (event: IEvent, payment: any) => {
   const payload: any = event.payload
 
+  const diagnosis = await analyzePaymentFailure({
+    provider: payment.provider,
+    failureReason: payload?.errorCode || payment.failureReason || "unknown",
+    amount: payment.amount,
+    currency: payment.currency,
+  })
+
   return {
-    problemType: payload?.errorCode || "unknown_issue",
-    aiDiagnosis: `Diagnosed from event ${event.eventType}: ${payload?.errorCode || "no error code"}`,
+    problemType: diagnosis.reason,
+    aiDiagnosis: `AI diagnosed (confidence ${diagnosis.confidence}): ${diagnosis.reason}`,
   }
 }
 
@@ -35,15 +46,17 @@ const findOrCreateRecoveryCase = async (data: {
     status: { $in: ["open", "in_progress"] },
   })
 
-  if (existing) return existing
+  if (existing) return { recoveryCase: existing, isNew: false }
 
-  return await createRecoveryCase({
+  const recoveryCase = await createRecoveryCase({
     customer: data.customerId,
     payment: data.paymentId,
     revenueAtRisk: data.revenueAtRisk,
     problemType: data.problemType,
     aiDiagnosis: data.aiDiagnosis,
   })
+
+  return { recoveryCase, isNew: true }
 }
 
 export const processEvent = async (event: IEvent) => {
@@ -72,15 +85,47 @@ export const processEvent = async (event: IEvent) => {
 
   const revenueAtRisk = payment.amount
 
-  const { problemType, aiDiagnosis } = await runAIDiagnosis(event)
+const { problemType, aiDiagnosis } = await runAIDiagnosis(event, payment)
 
-  const recoveryCase = await findOrCreateRecoveryCase({
+  const { recoveryCase, isNew } = await findOrCreateRecoveryCase({
     customerId: payment.customer.toString(),
     paymentId: payment._id.toString(),
     revenueAtRisk,
     problemType,
     aiDiagnosis,
   })
+
+   if (isNew) {
+  console.log("AUTO-SEND TRIGGERED for recoveryCase:", recoveryCase._id.toString())
+  const customer = await Customer.findById(payment.customer)
+  console.log("Customer found:", !!customer)
+
+  if (customer) {
+    try {
+      console.log("Calling generateRecoveryMessage...")
+      const messageContent = await generateRecoveryMessage({
+        customerName: customer.fullName,
+        amount: payment.amount,
+        currency: payment.currency,
+        reason: problemType,
+      })
+      console.log("AI message generated:", messageContent)
+
+      await recordAIMessage({
+        customerId: customer._id.toString(),
+        recoveryCaseId: recoveryCase._id.toString(),
+        content: messageContent,
+        channel: "in_app",
+        messageType: "recovery_prompt",
+      })
+      console.log("AI message saved successfully")
+    } catch (err) {
+      console.error("Auto-send recovery message failed:", err)
+    }
+  }
+} else {
+  console.log("SKIPPED auto-send — recovery case already existed (isNew = false)")
+}
 
   const workflowId = recoveryCase.currentWorkflow?.toString()
 

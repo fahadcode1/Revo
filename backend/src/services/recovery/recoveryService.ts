@@ -5,12 +5,16 @@ export const createRecoveryCase = async (data: {
   payment: string
   revenueAtRisk: number
   problemType: string
-  aiDiagnosis: string
-  status : string
+  aiDiagnosis?: string
+  status?: string
 }) => {
   const recoveryCase = await RecoveryCase.create({
-    ...data,
-    status: "open",
+    customer: data.customer,
+    payment: data.payment,
+    revenueAtRisk: data.revenueAtRisk,
+    problemType: data.problemType,
+    aiDiagnosis: data.aiDiagnosis ?? "",
+    status: data.status ?? "open",
   })
 
   return recoveryCase
@@ -65,23 +69,26 @@ export const resolveRecovery = async (recoveryCaseId: string) => {
   return recoveryCase
 }
 
-export const getRecoveryCases = async (filters: { status?: any; problemType?: any }) => {
+export const getRecoveryCases = async (filters: { status?: string; problemType?: string }) => {
   const query: Record<string, any> = {}
+  if (filters.status) query.status = filters.status
+  if (filters.problemType) query.problemType = filters.problemType
 
-  if (filters.status) {
-    query.status = filters.status
-  }
+  const cases = await RecoveryCase.find(query)
+    .populate("customer")
+    .populate("payment")
+    .populate("currentWorkflow")
+    .sort({ createdAt: -1 })
 
-  if (filters.problemType) {
-    query.problemType = filters.problemType
-  }
-
-  const cases = await RecoveryCase.find(query).sort({ createdAt: -1 })
   return cases
 }
 
 export const getRecoveryCaseById = async (recoveryCaseId: string) => {
   const recoveryCase = await RecoveryCase.findById(recoveryCaseId)
+    .populate("customer")
+    .populate("payment")
+    .populate("currentWorkflow")
+
   if (!recoveryCase) {
     throw new Error("Recovery case not found")
   }
@@ -95,7 +102,7 @@ export const manuallyTriggerRecovery = async (data: { recoveryCaseId: string; wo
     throw new Error("Recovery case not found")
   }
 
-  // TODO: delegate to workflowService.createWorkflow + startWorkflow
+  // TODO: delegate to workflowService.createWorkflow + startWorkflow, then set recoveryCase.currentWorkflow
   recoveryCase.status = "in_progress"
   await recoveryCase.save()
 

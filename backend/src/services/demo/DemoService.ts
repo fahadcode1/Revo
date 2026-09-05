@@ -3,15 +3,33 @@ import { Payment } from "../../models/Payment.Model"
 import { createCustomer, deleteCustomer } from "../customer/customerService"
 import { createPayment, updatePayment } from "../payment/paymentService"
 import { createRecoveryCase, startRecovery, resolveRecovery } from "../recovery/recoveryService"
+import { receiveEvent } from "../event/eventService"
+import { processEvent } from "../../core/recovery/recoveryEngine"
 
 export const createDemoCustomer = async (data: {
   fullName: string
   email: string
   phone: string
   status: string
+  amount: number
+  currency: string
+  provider: string
 }) => {
-  const customer = await createCustomer(data)
-  return customer
+  const { customer } = await createCustomer({
+    fullName: data.fullName,
+    email: data.email,
+    phone: data.phone,
+    status: data.status,
+  })
+
+  const payment = await createDemoPayment({
+    customerId: customer._id.toString(),
+    amount: data.amount,
+    currency: data.currency,
+    provider: data.provider,
+  })
+
+  return { customer, payment }
 }
 
 export const deleteDemoCustomer = async (customerId: string) => {
@@ -29,36 +47,51 @@ export const createCustomerWithIssue = async (data: {
   provider: string
   failureReason: string
 }) => {
-  const customer = await createCustomer({
+  const { customer } = await createCustomer({
     fullName: data.fullName,
     email: data.email,
     phone: data.phone,
     status: "issue",
-    issue: {
-      type: data.issueType,
-      amount: data.amount,
-      currency: data.currency,
-      provider: data.provider,
-      failureReason: data.failureReason,
-    },
   })
 
-  return customer
+  const payment = await createDemoPayment({
+    customerId: customer._id.toString(),
+    amount: data.amount,
+    currency: data.currency,
+    provider: data.provider,
+  })
+
+  const failureResult = await simulatePaymentFailure({
+    paymentId: payment._id.toString(),
+    failureReason: data.failureReason,
+  })
+
+  return { customer, ...failureResult }
 }
 
 export const createCustomerWithoutIssue = async (data: {
   fullName: string
   email: string
   phone: string
+  amount: number
+  currency: string
+  provider: string
 }) => {
-  const customer = await createCustomer({
+  const { customer } = await createCustomer({
     fullName: data.fullName,
     email: data.email,
     phone: data.phone,
     status: "active",
   })
 
-  return customer
+  const payment = await createDemoPayment({
+    customerId: customer._id.toString(),
+    amount: data.amount,
+    currency: data.currency,
+    provider: data.provider,
+  })
+
+  return { customer, payment }
 }
 
 export const createDemoPayment = async (data: {
@@ -78,6 +111,8 @@ export const createDemoPayment = async (data: {
   return payment
 }
 
+import { Event } from "../../models/Event.Model"
+
 export const simulatePaymentFailure = async (data: {
   paymentId: string
   failureReason: string
@@ -87,16 +122,20 @@ export const simulatePaymentFailure = async (data: {
     failureReason: data.failureReason,
   })
 
-const recoveryCase = await createRecoveryCase({
-  customer: payment.customer.toString(),
-  payment: payment._id.toString(),
-  revenueAtRisk: payment.amount,
-  problemType: data.failureReason,
-  status: "failed",   // ← add this
-  aiDiagnosis: "Simulated failure for demo purposes",
-})
+  const event = await Event.create({
+    eventType: "payment.failed",
+    source: "demo",
+    payload: {
+      paymentId: payment._id.toString(),
+      errorCode: data.failureReason,
+    },
+    processingStatus: "pending",
+    timestamp: new Date(),
+  })
 
-  return { payment, recoveryCase }
+  const result = await processEvent(event)
+
+  return { payment, ...result }
 }
 
 export const simulatePaymentSuccess = async (paymentId: string) => {

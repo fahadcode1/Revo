@@ -7,7 +7,7 @@ import {
   ResumeRecovery,
 } from "../../controllers/recovery/recoveryController";
 
-const recoveryRouter = Router();
+const recoveryRouter = Router()
 
 recoveryRouter.get('/recovery-cases', GetRecoveryCases)
 recoveryRouter.get('/recovery-cases/:recoveryCaseId', GetRecoveryCase)

@@ -13,6 +13,10 @@ import analyticsRouter from "./routes/v1/analytics.route";
 import settingRouter from "./routes/v1/setting.route";
 import webhookRouter from "./routes/v1/webhook.route";
 import workflowRouter from "./routes/v1/workflow.route";
+import { requestLogger } from "./middlewares/requestLogger"
+import { errorMiddleware } from "./middlewares/errorMiddleware"
+import conversationRouter from "./routes/v1/conversation.route"
+
 
 
 dns.setServers(["1.1.1.1", "8.8.8.8"])
@@ -38,24 +42,36 @@ app.use(cors({
 
 
 app.use(cookieParser())
+
+// Webhook routes need the RAW body for signature verification —
+// this must be registered BEFORE express.json() and scoped only to the webhook path.
+app.use('/api/v1/webhook', express.raw({ type: 'application/json' }), webhookRouter)
+
 app.use(express.json())
+app.use(requestLogger)
 
 app.use('/api/v1', customerRoutes)
 app.use('/api/v1', demoRoutes)
 app.use('/api/v1', recoveryRouter)
 app.use('/api/v1', policyRouter)
-app.use('/api/v1',analyticsRouter)
+app.use('/api/v1', analyticsRouter)
 app.use('/api/v1', settingRouter)
-app.use('/api/v1/', webhookRouter)
 app.use('/api/v1', workflowRouter)
+app.use('/api/v1', conversationRouter)
 
-app.get("/test", (req : Request, res : Response)  =>  {
-    res.json({ message: "CORS is working!" })
+app.get("/test", (req: Request, res: Response) => {
+  res.json({ message: "CORS is working!" })
 })
 
+// Error middleware MUST be last, after all routes
+app.use(errorMiddleware)
 
-app.listen(PORT, () =>  {
-    console.log(`Server is running on port ${PORT}`),
-    connectDb()
+const startServer = async () => {
+  await connectDb()
 
-})
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`)
+  })
+}
+
+startServer()

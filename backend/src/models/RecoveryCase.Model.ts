@@ -18,7 +18,7 @@ const recoveryCaseSchema = new mongoose.Schema<IRecoveryCase>(
     revenueAtRisk: { type: Number, required: true },
     problemType: { type: String, required: true },
     status: { type: String, required: true },
-    aiDiagnosis: { type: String, required: true },
+    aiDiagnosis: { type: String, required: false, default: "",},
     currentWorkflow: { type: Schema.Types.ObjectId, ref: "Workflow" },
     resolvedAt: { type: Date },
   },

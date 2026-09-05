@@ -11,6 +11,11 @@ interface Config {
     ownerEmail : string
     ownerMobileNumber : string
     allowedOrgins : string
+    redisHost : string
+    redisPort : string
+    redisPassword : string
+    paymentProviderMode : string
+
 }
 
 const config: Config = {
@@ -22,6 +27,12 @@ const config: Config = {
     ownerEmail : process.env.OWNER_EMAIL || '',
     ownerMobileNumber : process.env.OWNER_MOBILE_NUMBER || '',
     allowedOrgins : process.env.ALLOWED_ORIGINS || '',
+    redisHost : process.env.REDIS_HOST || '',
+    redisPort : process.env.REDIS_PORT || '',
+    redisPassword : process.env.REDIS_PASSWORD || '',
+    paymentProviderMode: process.env.PAYMENT_PROVIDER_MODE || "mock", 
+
+
 
 }
 

@@ -1,19 +1,44 @@
-export type RecoveryStatus =
-  | "pending"
-  | "retrying"
-  | "recovered"
-  | "escalated"
-  | "stopped";
+export interface RecoveryCustomer {
+  _id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecoveryPayment {
+  _id: string;
+  customer: string;
+  amount: number;
+  currency: string;
+  status: string;
+  failureReason?: string;
+  provider: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ⚠️ ASSUMPTION — placeholder shape until Workflow.Model.ts is confirmed
+export interface RecoveryWorkflow {
+  _id: string;
+  type?: string;
+  status?: string;
+  currentStep?: string;
+  [key: string]: unknown;
+}
 
 export interface RecoveryCase {
-  id: string;
-  customerName?: string;
-  amount?: number;
-  status: RecoveryStatus | string;
-  problemType?: string; // insufficient_funds | card_expired | bank_declined | network_error
-  attemptCount?: number;
-  maxAttempts?: number;
-  lastAttemptAt?: string;
-  nextRetryAt?: string;
-  workflowType?: string;
+  _id: string;
+  customer: RecoveryCustomer;
+  payment: RecoveryPayment;
+  revenueAtRisk: number;
+  problemType: string;
+  status: string;
+  aiDiagnosis: string;
+  currentWorkflow?: RecoveryWorkflow;
+  resolvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

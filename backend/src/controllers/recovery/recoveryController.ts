@@ -9,7 +9,9 @@ import {
 
 export const GetRecoveryCases = async (req: Request, res: Response) => {
   try {
-    const { status, problemType } = req.query
+    const status = typeof req.query.status === "string" ? req.query.status : undefined
+    const problemType = typeof req.query.problemType === "string" ? req.query.problemType : undefined
+
     const cases = await getRecoveryCases({ status, problemType })
 
     res.status(200).json({
@@ -25,8 +27,8 @@ export const GetRecoveryCases = async (req: Request, res: Response) => {
 
 export const GetRecoveryCase = async (req: Request, res: Response) => {
   try {
-    const  recoveryCaseId  = req.params.recoveryCaseId as string 
-    const recoveryCase = await getRecoveryCaseById(recoveryCaseId) 
+    const recoveryCaseId = req.params.recoveryCaseId as string
+    const recoveryCase = await getRecoveryCaseById(recoveryCaseId)
 
     res.status(200).json({
       success: true,

@@ -10,11 +10,18 @@ import {
   triggerRecoveryScenario,
   resetScenario,
 } from "../../services/demo/DemoService"
-
 export const CreateDemoCustomer = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, phone, status } = req.body
-    const customer = await createDemoCustomer({ fullName, email, phone, status })
+    const { fullName, email, phone, status, amount, currency, provider } = req.body
+    const customer = await createDemoCustomer({
+      fullName,
+      email,
+      phone,
+      status,
+      amount,
+      currency,
+      provider,
+    })
 
     res.status(200).json({
       success: true,
@@ -41,6 +48,7 @@ export const DeleteDemoCustomer = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Internal server error" })
   }
 }
+
 
 export const CreateCustomerWithIssue = async (req: Request, res: Response) => {
   try {
@@ -69,8 +77,15 @@ export const CreateCustomerWithIssue = async (req: Request, res: Response) => {
 
 export const CreateCustomerWithoutIssue = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, phone } = req.body
-    const customer = await createCustomerWithoutIssue({ fullName, email, phone })
+    const { fullName, email, phone, amount, currency, provider } = req.body
+    const customer = await createCustomerWithoutIssue({
+      fullName,
+      email,
+      phone,
+      amount,
+      currency,
+      provider,
+    })
 
     res.status(200).json({
       success: true,
@@ -82,7 +97,6 @@ export const CreateCustomerWithoutIssue = async (req: Request, res: Response) =>
     return res.status(500).json({ success: false, message: "Internal server error" })
   }
 }
-
 export const CreateDemoPayment = async (req: Request, res: Response) => {
   try {
     const { customerId, amount, currency, provider } = req.body

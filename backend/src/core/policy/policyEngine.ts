@@ -11,6 +11,10 @@ export const isActionAllowed = async (problemType: string, action: string) => {
 }
 
 export const checkRetryCount = async (workflowId: string, action: string, maxRetries: number) => {
+  if (!workflowId) {
+    return { attemptCount: 0, limitReached: false }
+  }
+
   const history = await getWorkflowHistory(workflowId)
   const attemptCount = history.filter((step) => step.action === action && step.status === "executed").length
 
@@ -21,6 +25,10 @@ export const checkRetryCount = async (workflowId: string, action: string, maxRet
 }
 
 export const checkCooldown = async (workflowId: string, action: string, cooldownMinutes: number) => {
+  if (!workflowId) {
+    return { onCooldown: false }
+  }
+
   const history = await getWorkflowHistory(workflowId)
   const lastAttempt = history
     .filter((step) => step.action === action && step.executedTime)

@@ -6,6 +6,7 @@ export interface Customer {
   status: string;        // e.g. "active" | "issue" | "resolved" — confirm actual values
   issueType?: string;
   createdAt?: string;
+  
 }
 
 export interface PaymentIssue {

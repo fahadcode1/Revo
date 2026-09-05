@@ -7,39 +7,42 @@ interface BasePayload {
   email: string;
   phone: string;
 }
+
+interface StandardPayload extends BasePayload {
+  status: string;
+  amount: number;
+  currency: string;
+  provider: "razorpay";
+}
+
+interface WithoutIssuePayload extends BasePayload {
+  amount: number;
+  currency: string;
+  provider: "razorpay";
+}
+
 interface WithIssuePayload extends BasePayload {
   issueType: string;
   amount: number;
   currency: string;
-  provider: string;
+  provider: "razorpay";
   failureReason: string;
 }
 
-interface StandardPayload extends BasePayload {
-  status: string;
-}
 
-interface WithIssuePayload extends BasePayload {
-  issueType: string;
+interface WithIssueResult {
+  customer: Customer;
+  payment: any; 
+  recoveryCase: any; 
+  status: string;
+  workflow?: any;
 }
 
 export function useCreateCustomer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createStandard = async (payload: StandardPayload): Promise<Customer | null> => {
-    return submit("/create-democustomer", payload);
-  };
-
-  const createWithIssue = async (payload: WithIssuePayload): Promise<Customer | null> => {
-    return submit("/create-democustomer-wi", payload);
-  };
-
-  const createWithoutIssue = async (payload: BasePayload): Promise<Customer | null> => {
-    return submit("/create-democustomer-woi", payload);
-  };
-
-  const submit = async (url: string, payload: unknown): Promise<Customer | null> => {
+  const submit = async <T>(url: string, payload: unknown): Promise<T | null> => {
     setLoading(true);
     setError(null);
     try {
@@ -51,6 +54,18 @@ export function useCreateCustomer() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const createStandard = async (payload: StandardPayload): Promise<Customer | null> => {
+    return submit<Customer>("/create-democustomer", payload);
+  };
+
+  const createWithIssue = async (payload: WithIssuePayload): Promise<WithIssueResult | null> => {
+    return submit<WithIssueResult>("/create-democustomer-wi", payload);
+  };
+
+  const createWithoutIssue = async (payload: WithoutIssuePayload): Promise<Customer | null> => {
+    return submit<Customer>("/create-democustomer-woi", payload);
   };
 
   return { createStandard, createWithIssue, createWithoutIssue, loading, error };
