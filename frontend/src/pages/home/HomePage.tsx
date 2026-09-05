@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import StatCard from "../../components/app/cards/StateCard";
 import RecoveryRow from "../../components/app/cards/RecoveryRow";
 import { useRecoveryCases } from "../../hooks/useRecoveryCases";
+import { useAnalytics } from "../../hooks/useAnalytics";
+import { useSettings } from "../../hooks/useSettings";
 import type { RecoveryCase } from "../../components/types/recovery";
+import type { DashboardStats } from "../../components/types/analytics";
+import type { Settings } from "../../components/types/settings";
 import { useNavigate } from "react-router-dom";
 
 type RecoveryStatus = "Recovered" | "Escalated" | "Retrying";
@@ -10,19 +14,29 @@ type RecoveryStatus = "Recovered" | "Escalated" | "Retrying";
 const STATUS_LABELS: Record<string, RecoveryStatus> = {
   open: "Retrying",
   in_progress: "Retrying",
-  stopped: "Escalated",
+  failed: "Escalated",
   resolved: "Recovered",
 };
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { getCases, loading, error } = useRecoveryCases();
+  const { getDashboardStats, loading: statsLoading } = useAnalytics();
+  const { getSettings } = useSettings();
   const [cases, setCases] = useState<RecoveryCase[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
     (async () => {
-      const result = await getCases();
-      setCases(result ?? []);
+      const [caseResult, statsResult, settingsResult] = await Promise.all([
+        getCases(),
+        getDashboardStats(),
+        getSettings(),
+      ]);
+      setCases(caseResult ?? []);
+      setStats(statsResult);
+      setSettings(settingsResult);
     })();
   }, []);
 
@@ -30,14 +44,13 @@ export default function HomePage() {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 6);
 
+  const aiEnabled = settings?.aiEnabled ?? true;
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-8 text-white">
-
       {/* Header */}
       <div className="mb-8">
-        <p className="mb-2 text-sm text-[#666]">
-          Revenue Recovery
-        </p>
+        <p className="mb-2 text-sm text-[#666]">Revenue Recovery</p>
 
         <h1 className="text-2xl font-semibold text-white">
           Good morning, Revo is ready.
@@ -48,17 +61,53 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Stats — left as placeholders, analytics comes later */}
+      {/* AI off banner */}
+      {!aiEnabled && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-5 py-3">
+          <div className="h-2 w-2 rounded-full bg-yellow-400" />
+          <p className="text-sm text-yellow-300">
+            AI agent is currently turned off — customer replies will not be interpreted automatically.
+          </p>
+          <button
+            onClick={() => navigate("/settings")}
+            className="ml-auto cursor-pointer text-xs text-yellow-300 underline hover:text-yellow-200"
+          >
+            Go to settings
+          </button>
+        </div>
+      )}
+
+      {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total processed" value="32" />
-        <StatCard label="Recovered" value="19" valueClass="text-green-500" />
-        <StatCard label="Escalated" value="8" valueClass="text-red-400" />
-        <StatCard label="Amount recovered" value="Rs 24,860" />
+        <StatCard
+          label="Total processed"
+          value={statsLoading ? "…" : String(stats?.totalProcessed ?? 0)}
+        />
+
+        <StatCard
+          label="Recovered"
+          value={statsLoading ? "…" : String(stats?.recovered ?? 0)}
+          valueClass="text-green-500"
+        />
+
+        <StatCard
+          label="Escalated"
+          value={statsLoading ? "…" : String(stats?.escalated ?? 0)}
+          valueClass="text-red-400"
+        />
+
+        <StatCard
+          label="Amount recovered"
+          value={
+            statsLoading
+              ? "…"
+              : `Rs ${(stats?.amountRecovered ?? 0).toLocaleString("en-IN")}`
+          }
+        />
       </div>
 
       {/* Recovery overview */}
       <div className="mt-8 rounded-xl border border-[#292929] bg-[#151515]">
-
         <div className="flex items-center justify-between border-b border-[#292929] px-5 py-4">
           <div>
             <h2 className="text-sm font-medium text-white">
@@ -68,6 +117,7 @@ export default function HomePage() {
               Latest actions taken by Revo
             </p>
           </div>
+
           <button
             onClick={() => navigate("/recovery")}
             className="cursor-pointer text-xs text-[#888] transition-colors hover:text-white"
@@ -75,6 +125,7 @@ export default function HomePage() {
             View all →
           </button>
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
@@ -118,10 +169,10 @@ export default function HomePage() {
                   <RecoveryRow
                     key={c._id}
                     customer={c.customer?.fullName ?? "—"}
-                    amount={`${c.payment?.currency ?? ""} ${c.payment?.amount ?? 0}`}
+                    amount={`${c.payment?.currency ?? "Rs"} ${c.payment?.amount ?? 0}`}
                     status={STATUS_LABELS[c.status] ?? "Retrying"}
                     attempts={0}
-                    reason={c.problemType}
+                    reason={c.problemType ?? "—"}
                   />
                 ))}
             </tbody>
@@ -132,19 +183,23 @@ export default function HomePage() {
       {/* Agent status */}
       <div className="mt-6 flex items-center justify-between rounded-xl border border-[#292929] bg-[#151515] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="h-2 w-2 rounded-full bg-green-500" />
+          <div className={`h-2 w-2 rounded-full ${aiEnabled ? "bg-green-500" : "bg-[#555]"}`} />
           <div>
             <p className="text-sm text-white">
-              Revo is actively recovering revenue
+              {aiEnabled ? "Revo is actively recovering revenue" : "Revo's AI agent is turned off"}
             </p>
             <p className="mt-1 text-xs text-[#666]">
-              Monitoring failed payments and deciding next actions.
+              {aiEnabled
+                ? "Monitoring failed payments and deciding next actions."
+                : "Recovery actions require manual triggers until AI is re-enabled."}
             </p>
           </div>
         </div>
-        <span className="text-xs text-green-500">Active</span>
-      </div>
 
+        <span className={`text-xs ${aiEnabled ? "text-green-500" : "text-[#666]"}`}>
+          {aiEnabled ? "Active" : "Inactive"}
+        </span>
+      </div>
     </main>
   );
 }

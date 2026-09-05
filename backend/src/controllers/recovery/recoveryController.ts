@@ -7,6 +7,26 @@ import {
   resumeRecovery,
 } from "../../services/recovery/recoveryService"
 
+import { resolveIssueManually } from "../../services/recovery/recoveryService"
+
+export const ResolveIssue = async (req: Request, res: Response) => {
+  try {
+    const recoveryCaseId = req.params.recoveryCaseId as string
+    const { resolutionReason } = req.body
+
+    const recoveryCase = await resolveIssueManually({ recoveryCaseId, resolutionReason })
+
+    res.status(200).json({
+      success: true,
+      message: "Issue resolved, recovery case marked as recovered",
+      data: recoveryCase,
+    })
+  } catch (err) {
+    console.error("ResolveIssue error:", err)
+    return res.status(500).json({ success: false, message: "Internal server error" })
+  }
+}
+
 export const GetRecoveryCases = async (req: Request, res: Response) => {
   try {
     const status = typeof req.query.status === "string" ? req.query.status : undefined
@@ -89,3 +109,4 @@ export const ResumeRecovery = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: "Internal server error" })
   }
 }
+

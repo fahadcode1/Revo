@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useRecoveryCases } from "../../hooks/useRecoveryCases";
 import { useConversation } from "../../hooks/useConversation";
+import { useRecoveryActions } from "../../hooks/useRecoveryActions";
 import type { RecoveryCase } from "../../components/types/recovery";
 import type { Message, FollowUpAction } from "../../components/types/conversation";
 
@@ -12,16 +13,27 @@ const INTENT_LABELS: Record<string, string> = {
   refusal: "Refusal",
 };
 
+const RESOLUTION_REASONS = [
+  { value: "card_updated", label: "Card updated" },
+  { value: "balance_added", label: "Balance added" },
+  { value: "payment_method_changed", label: "Payment method changed" },
+  { value: "customer_resolved", label: "Customer resolved" },
+  { value: "other", label: "Other" },
+];
+
 export default function RecoveryCaseDetailPage() {
   const { recoveryCaseId } = useParams<{ recoveryCaseId: string }>();
   const { getCaseById } = useRecoveryCases();
   const { getMessages, replyAsCustomer, loading: sending, error } = useConversation();
+  const { resolveIssue, loading: resolving } = useRecoveryActions();
 
   const [recoveryCase, setRecoveryCase] = useState<RecoveryCase | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [reply, setReply] = useState("");
   const [lastIntentByMessageId, setLastIntentByMessageId] = useState<Record<string, string>>({});
   const [flashNotice, setFlashNotice] = useState<string | null>(null);
+  const [showResolveForm, setShowResolveForm] = useState(false);
+  const [resolutionReason, setResolutionReason] = useState("customer_resolved");
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   const loadAll = useCallback(async () => {
@@ -79,6 +91,15 @@ export default function RecoveryCaseDetailPage() {
     }
   };
 
+  const handleResolve = async () => {
+    if (!recoveryCaseId) return;
+    const result = await resolveIssue(recoveryCaseId, { resolutionReason });
+    if (result) {
+      setShowResolveForm(false);
+      await loadAll();
+    }
+  };
+
   if (!recoveryCase) {
     return (
       <main className="mx-auto max-w-4xl px-6 py-8 text-white">
@@ -88,6 +109,10 @@ export default function RecoveryCaseDetailPage() {
   }
 
   const escalated = recoveryCase.status === "in_progress" && flashNotice === "Escalated to human";
+  const canResolve =
+    recoveryCase.customer?.status === "issue" &&
+    recoveryCase.status !== "resolved" &&
+    recoveryCase.status !== "stopped";
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-8 text-white">
@@ -101,14 +126,59 @@ export default function RecoveryCaseDetailPage() {
             <p className="mt-1 text-xs text-[#666]">{recoveryCase.customer.email}</p>
           </div>
 
-          <div className="flex flex-col items-end gap-1">
-            <span className="rounded-md bg-[#202020] px-2 py-1 text-[11px] capitalize text-[#ccc]">
-              {recoveryCase.status.replace("_", " ")}
-            </span>
-            {(escalated || recoveryCase.status === "stopped") && (
-              <span className="rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-400">
-                {recoveryCase.status === "stopped" ? "Recovery stopped" : "Escalated to human"}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-[#202020] px-2 py-1 text-[11px] capitalize text-[#ccc]">
+                {recoveryCase.status.replace("_", " ")}
               </span>
+              {(escalated || recoveryCase.status === "stopped") && (
+                <span className="rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-400">
+                  {recoveryCase.status === "stopped" ? "Recovery stopped" : "Escalated to human"}
+                </span>
+              )}
+            </div>
+
+            {canResolve && (
+              <>
+                {showResolveForm ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={resolutionReason}
+                      onChange={(e) => setResolutionReason(e.target.value)}
+                      className="rounded-lg border border-[#292929] bg-[#0d0d0d] px-2 py-1 text-xs text-white focus:outline-none"
+                    >
+                      {RESOLUTION_REASONS.map((r) => (
+                        <option key={r.value} value={r.value}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      disabled={resolving}
+                      onClick={handleResolve}
+                      className="cursor-pointer rounded-lg bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400 hover:bg-green-500/20 disabled:opacity-50"
+                    >
+                      {resolving ? "Saving…" : "Confirm"}
+                    </button>
+                    <button
+                      onClick={() => setShowResolveForm(false)}
+                      className="cursor-pointer text-xs text-[#666] hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowResolveForm(true);
+                      setResolutionReason("customer_resolved");
+                    }}
+                    className="cursor-pointer rounded-lg border border-green-400/40 px-3 py-1.5 text-xs font-medium text-green-400 hover:bg-green-500/10"
+                  >
+                    Resolve issue
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

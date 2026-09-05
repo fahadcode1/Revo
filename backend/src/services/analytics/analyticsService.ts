@@ -1,5 +1,36 @@
 import { Payment } from "../../models/Payment.Model"
 import { RecoveryCase } from "../../models/RecoveryCase.Model"
+import { WorkflowStep } from "../../models/WorkflowStep.Model"
+import { Workflow } from "../../models/Workflow.Model"
+
+export const getRecoveryActivity = async () => {
+  const resolvedCases = await RecoveryCase.find({ status: "resolved" })
+    .populate("customer", "fullName email")
+    .sort({ resolvedAt: -1 })
+
+  const activity = await Promise.all(
+    resolvedCases.map(async (recoveryCase) => {
+      let attempts = 0
+      if (recoveryCase.currentWorkflow) {
+        attempts = await WorkflowStep.countDocuments({
+          workflow: recoveryCase.currentWorkflow,
+          action: "RETRY_PAYMENT",
+          status: "executed",
+        })
+      }
+      return {
+        recoveryCaseId: recoveryCase._id,
+        customer: recoveryCase.customer,
+        problemType: recoveryCase.problemType,
+        amountRecovered: recoveryCase.revenueAtRisk,
+        attempts,
+        resolvedAt: recoveryCase.resolvedAt,
+      }
+    })
+  )
+
+  return activity
+}
 
 const buildDateRangeQuery = (from?: any, to?: any) => {
   const query: Record<string, any> = {}

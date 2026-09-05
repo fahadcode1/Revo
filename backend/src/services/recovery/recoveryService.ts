@@ -1,4 +1,50 @@
 import { RecoveryCase } from "../../models/RecoveryCase.Model"
+import { Customer } from "../../models/Customer.Model"
+import { completeWorkflowById } from "../../core/workflow/workflowEngine"
+import { recordSystemActivity } from "../audit/auditService"
+
+
+export const resolveIssueManually = async (data: {
+  recoveryCaseId: string
+  resolutionReason: string // e.g. "card_updated", "balance_added", "payment_method_changed", "customer_resolved", "other"
+}) => {
+  const recoveryCase = await RecoveryCase.findById(data.recoveryCaseId)
+  if (!recoveryCase) {
+    throw new Error("Recovery case not found")
+  }
+
+  if (recoveryCase.status === "resolved" || recoveryCase.status === "stopped") {
+    throw new Error(`Recovery case is already ${recoveryCase.status}`)
+  }
+
+  // Mark recovery case as recovered
+  recoveryCase.status = "resolved"
+  recoveryCase.resolvedAt = new Date()
+  await recoveryCase.save()
+
+  // Complete the associated workflow, if one exists
+  if (recoveryCase.currentWorkflow) {
+    await completeWorkflowById(recoveryCase.currentWorkflow.toString())
+  }
+
+  // Move customer from "issue" back to a normal active state
+  const customer = await Customer.findById(recoveryCase.customer)
+  if (customer && customer.status === "issue") {
+    customer.status = "active"
+    await customer.save()
+  }
+
+  // Audit trail
+  await recordSystemActivity({
+    customer: recoveryCase.customer.toString(),
+    recoveryCase: recoveryCase._id.toString(),
+    action: "ISSUE_RESOLVED_MANUALLY",
+    actor: "user",
+    result: `resolved: ${data.resolutionReason}`,
+  })
+
+  return recoveryCase
+}
 
 export const createRecoveryCase = async (data: {
   customer: string

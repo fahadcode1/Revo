@@ -20,7 +20,7 @@ export interface RecoveryPayment {
   updatedAt: string;
 }
 
-// ⚠️ ASSUMPTION — placeholder shape until Workflow.Model.ts is confirmed
+
 export interface RecoveryWorkflow {
   _id: string;
   type?: string;
@@ -35,7 +35,7 @@ export interface RecoveryCase {
   payment: RecoveryPayment;
   revenueAtRisk: number;
   problemType: string;
-  status: string;
+  status: "open" | "in_progress" | "resolved" | "failed" | string;
   aiDiagnosis: string;
   currentWorkflow?: RecoveryWorkflow;
   resolvedAt?: string;

@@ -5,7 +5,24 @@ import {
   getRecoveryRate,
   getFailedRecoveries,
   getActiveRecoveries,
+  getRecoveryActivity
 } from "../../services/analytics/analyticsService"
+
+
+export const GetRecoveryActivity = async (req: Request, res: Response) => {
+  try {
+    const data = await getRecoveryActivity()
+
+    res.status(200).json({
+      success: true,
+      message: "Recovery activity fetched",
+      data,
+    })
+  } catch (err) {
+    console.error("GetRecoveryActivity error:", err)
+    return res.status(500).json({ success: false, message: "Internal server error" })
+  }
+}
 
 export const GetRevenueAtRisk = async (req: Request, res: Response) => {
   try {

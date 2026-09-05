@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -18,16 +19,18 @@ export default function Navbar() {
 
         {/* Logo */}
         <div
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/")}
           className="flex cursor-pointer items-center gap-2"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-sm font-bold text-black">
             R
           </div>
 
-          <span className="text-lg font-semibold text-white">
-            Revo
-          </span>
+          <Link to="/">
+            <span className="text-lg font-semibold text-white">
+              Revo
+            </span>
+          </Link>
         </div>
 
         {/* Navigation */}
@@ -52,7 +55,7 @@ export default function Navbar() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-4">
+        <Link to="/settings" className="flex items-center gap-4">
           <div className="hidden text-right sm:block">
             <p className="text-xs text-[#666]">AI Agent</p>
             <p className="text-sm text-white">Revo</p>
@@ -61,7 +64,7 @@ export default function Navbar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#252525] text-xs font-medium text-white">
             R
           </div>
-        </div>
+        </Link>
 
       </div>
     </nav>

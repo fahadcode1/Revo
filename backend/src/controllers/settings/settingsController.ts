@@ -2,8 +2,23 @@ import { Request, Response } from "express"
 import {
   setRecoveryEngineStatus,
   setAiStatus,
+  getSettings,
 } from "../../services/settings/SettingsService"
 
+export const GetSettings = async (req: Request, res: Response) => {
+  try {
+    const settings = await getSettings()
+
+    res.status(200).json({
+      success: true,
+      message: "Settings fetched",
+      data: settings,
+    })
+  } catch (err) {
+    console.error("GetSettings error:", err)
+    return res.status(500).json({ success: false, message: "Internal server error" })
+  }
+}
 
 export const SetRecoveryEngineStatus = async (req: Request, res: Response) => {
   try {

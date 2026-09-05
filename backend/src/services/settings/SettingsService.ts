@@ -13,20 +13,20 @@ const getOrCreateSettings = async () => {
   return settings
 }
 
+export const getSettings = async () => {
+  return getOrCreateSettings()
+}
+
 export const setRecoveryEngineStatus = async (enabled: boolean) => {
   const settings = await getOrCreateSettings()
-
   settings.recoveryEngineEnabled = enabled
   await settings.save()
-
   return settings
 }
 
 export const setAiStatus = async (enabled: boolean) => {
   const settings = await getOrCreateSettings()
-
   settings.aiEnabled = enabled
   await settings.save()
-
   return settings
 }

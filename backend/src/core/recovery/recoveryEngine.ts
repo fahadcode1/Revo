@@ -12,8 +12,7 @@ import { recordAIMessage } from "../../services/conversation/conversationService
 import { Customer } from "../../models/Customer.Model"
 
 const isEngineEnabled = async () => {
-  const settings = await Settings.findOne()
-  return settings ? settings.recoveryEngineEnabled : true
+  return true 
 }
 
 import { analyzePaymentFailure } from "../../ai/diagnosis/diagnosisService"

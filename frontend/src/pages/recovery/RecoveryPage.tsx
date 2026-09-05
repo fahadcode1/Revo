@@ -5,16 +5,31 @@ import { useRecoveryActions } from "../../hooks/useRecoveryActions";
 import type { RecoveryCase } from "../../components/types/recovery";
 import { FAILURE_REASON_META } from "../../components/types/customer";
 
+const RESOLUTION_REASONS = [
+  { value: "card_updated", label: "Card updated" },
+  { value: "balance_added", label: "Balance added" },
+  { value: "payment_method_changed", label: "Payment method changed" },
+  { value: "customer_resolved", label: "Customer resolved" },
+  { value: "other", label: "Other" },
+];
+
 export default function RecoveryPage() {
   const navigate = useNavigate();
   const { getCases, loading, error } = useRecoveryCases();
-  const { triggerRecovery, stopRecovery, resumeRecovery, loading: actionLoading } =
-    useRecoveryActions();
+  const {
+    triggerRecovery,
+    stopRecovery,
+    resumeRecovery,
+    resolveIssue,
+    loading: actionLoading,
+  } = useRecoveryActions();
 
   const [cases, setCases] = useState<RecoveryCase[]>([]);
   const [status, setStatus] = useState("");
   const [problemType, setProblemType] = useState("");
   const [bulkRunning, setBulkRunning] = useState<"trigger" | "stop" | "resume" | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [resolutionReason, setResolutionReason] = useState("customer_resolved");
 
   const loadCases = useCallback(async () => {
     const result = await getCases({
@@ -42,6 +57,12 @@ export default function RecoveryPage() {
       setBulkRunning(null);
       await loadCases();
     }
+  };
+
+  const handleResolve = async (caseId: string) => {
+    await resolveIssue(caseId, { resolutionReason });
+    setResolvingId(null);
+    await loadCases();
   };
 
   const busy = bulkRunning !== null || actionLoading;
@@ -166,6 +187,9 @@ export default function RecoveryPage() {
                 !error &&
                 cases.map((c) => {
                   const reasonMeta = c.problemType ? FAILURE_REASON_META[c.problemType] : null;
+                  const isIssueCustomer = c.customer?.status === "issue";
+                  const canResolve = c.status !== "resolved" && c.status !== "stopped";
+                  const isResolving = resolvingId === c._id;
 
                   return (
                     <tr key={c._id} className="border-b border-[#292929] last:border-0">
@@ -191,12 +215,57 @@ export default function RecoveryPage() {
                         )}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <button
-                          onClick={() => navigate(`/recovery/${c._id}`)}
-                          className="cursor-pointer text-xs text-[#888] hover:text-white"
-                        >
-                          Open →
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          {isIssueCustomer && canResolve && (
+                            <>
+                              {isResolving ? (
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={resolutionReason}
+                                    onChange={(e) => setResolutionReason(e.target.value)}
+                                    className="rounded-lg border border-[#292929] bg-[#0d0d0d] px-2 py-1 text-xs text-white focus:outline-none"
+                                  >
+                                    {RESOLUTION_REASONS.map((r) => (
+                                      <option key={r.value} value={r.value}>
+                                        {r.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    disabled={actionLoading}
+                                    onClick={() => handleResolve(c._id)}
+                                    className="cursor-pointer text-xs text-green-500 hover:text-green-400 disabled:opacity-50"
+                                  >
+                                    {actionLoading ? "Saving…" : "Confirm"}
+                                  </button>
+                                  <button
+                                    onClick={() => setResolvingId(null)}
+                                    className="cursor-pointer text-xs text-[#666] hover:text-white"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setResolvingId(c._id);
+                                    setResolutionReason("customer_resolved");
+                                  }}
+                                  className="cursor-pointer text-xs text-green-500 hover:text-green-400"
+                                >
+                                  Resolve
+                                </button>
+                              )}
+                            </>
+                          )}
+
+                          <button
+                            onClick={() => navigate(`/recovery/${c._id}`)}
+                            className="cursor-pointer text-xs text-[#888] hover:text-white"
+                          >
+                            Open →
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

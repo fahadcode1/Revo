@@ -6,6 +6,10 @@ interface TriggerRecoveryPayload {
   workflowType: string;
 }
 
+interface ResolveIssuePayload {
+  resolutionReason: string;
+}
+
 export function useRecoveryActions() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +29,13 @@ export function useRecoveryActions() {
     return submit(`/recovery-cases/${recoveryCaseId}/resume`, {});
   };
 
+  const resolveIssue = async (
+    recoveryCaseId: string,
+    payload: ResolveIssuePayload
+  ): Promise<RecoveryCase | null> => {
+    return submit(`/recovery-cases/${recoveryCaseId}/resolve-issue`, payload);
+  };
+
   const submit = async (url: string, payload: unknown): Promise<RecoveryCase | null> => {
     setLoading(true);
     setError(null);
@@ -39,5 +50,5 @@ export function useRecoveryActions() {
     }
   };
 
-  return { triggerRecovery, stopRecovery, resumeRecovery, loading, error };
+  return { triggerRecovery, stopRecovery, resumeRecovery, resolveIssue, loading, error };
 }

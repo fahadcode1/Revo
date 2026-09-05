@@ -6,6 +6,8 @@ import CustomersPage from "../pages/customer/CustomersPage";
 import ManageCustomerPage from "../pages/management/ManageCustomerPage";
 import RecoveryPage from "../pages/recovery/RecoveryPage";
 import RecoveryCaseDetailPage from "../pages/recovery/RecoveryCaseDetailPage";
+import ActivityPage from "../pages/activity/ActivityPage";
+import SettingsPage from "../pages/setting/SettingsPage";
 
 
 export const AppRoutes = () =>  {
@@ -19,6 +21,8 @@ export const AppRoutes = () =>  {
                 <Route path="/management" element={<ManageCustomerPage />} />
                 <Route path="/recovery" element={<RecoveryPage />} />
                 <Route path="/recovery/:recoveryCaseId" element={<RecoveryCaseDetailPage />} />
+                <Route path="/activity" element={<ActivityPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
 
              </Route>
         </Routes>
